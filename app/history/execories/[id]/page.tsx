@@ -1,35 +1,84 @@
-// app/history/admin-items/[id]/page.tsx
-import { cookies } from 'next/headers';
+// app/history/execories/[id]/page.tsx
 import { notFound } from 'next/navigation';
 import AdminRequisitionDetails from '@/components/AdminRequisitionDetails';
 import AdminRequisitionHistory from '@/components/AdminRequisitionHistory';
 import AdminRequisitionDetailsHeader from '@/components/AdminRequisitionDetailsHeader';
 import { AdminRequisitionWithItems } from '@/types/admin-items';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
+interface AdminItemJoin {
+  item_name: string;
+  quantity: number;
+  unit: string;
+}
+
+interface AdminRequisitionItemWithItem {
+  id: number;
+  requisition_id: number;
+  admin_item_id: number;
+  requested_quantity: number;
+  approved_quantity: number;
+  unit: string;
+  remark: string;
+  is_processed: boolean;
+  processed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  admin_items: AdminItemJoin;
+}
+
 async function getRequisitionDetails(id: number): Promise<AdminRequisitionWithItems | null> {
   try {
-    // Await cookies before using it
-    const cookieStore = await cookies();
-    
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/history/execories/${id}`,
-      {
-        headers: {
-          cookie: cookieStore.toString(),
-        },
-        cache: 'no-store',
-      }
-    );
+    const { data: requisition, error: reqError } = await supabase
+      .from('admin_item_requisitions')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!response.ok) {
-      console.error('Error fetching details:', response.statusText);
+    if (reqError || !requisition) {
+      console.error('Error fetching requisition:', reqError);
       return null;
     }
 
-    const result = await response.json();
-    return result.data || null;
+    const { data: items, error: itemsError } = await supabase
+      .from('admin_item_requisition_items')
+      .select(`
+        *,
+        admin_items (
+          item_name,
+          quantity,
+          unit
+        )
+      `)
+      .eq('requisition_id', id);
+
+    if (itemsError) {
+      console.error('Error fetching requisition items:', itemsError);
+      return null;
+    }
+
+    const typedItems = items as unknown as AdminRequisitionItemWithItem[];
+
+    const requisitionWithItems: AdminRequisitionWithItems = {
+      ...requisition,
+      items: typedItems?.map((item) => ({
+        id: item.id,
+        requisition_id: item.requisition_id,
+        admin_item_id: item.admin_item_id,
+        requested_quantity: item.requested_quantity,
+        approved_quantity: item.approved_quantity,
+        unit: item.admin_items?.unit || item.unit || '',
+        remark: item.remark,
+        is_processed: item.is_processed,
+        processed_at: item.processed_at,
+        item_name: item.admin_items?.item_name || 'Unknown',
+        quantity: item.admin_items?.quantity || 0,
+      })) || [],
+    };
+
+    return requisitionWithItems;
   } catch (error) {
     console.error('Failed to fetch requisition details:', error);
     return null;

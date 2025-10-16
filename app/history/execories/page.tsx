@@ -1,33 +1,24 @@
-// app/history/admin-items/page.tsx
-import { cookies } from 'next/headers';
+// app/history/execories/page.tsx
 import Link from 'next/link';
 import AdminRequisitionsList from '@/components/AdminRequisitionsList';
 import { AdminRequisition } from '@/types/admin-items';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 async function getRequisitions(): Promise<AdminRequisition[]> {
   try {
-    // Await cookies before using it
-    const cookieStore = await cookies();
-    
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL }/api/history/execories`,
-      {
-        headers: {
-          cookie: cookieStore.toString(),
-        },
-        cache: 'no-store',
-      }
-    );
+    const { data, error } = await supabase
+      .from('admin_item_requisitions')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    if (!response.ok) {
-      console.error('Error fetching from API:', response.statusText);
+    if (error) {
+      console.error('Database error fetching requisitions:', error);
       return [];
     }
 
-    const result = await response.json();
-    return result.data || [];
+    return (data as AdminRequisition[]) || [];
   } catch (error) {
     console.error('Failed to fetch requisitions:', error);
     return [];

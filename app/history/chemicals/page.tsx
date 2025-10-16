@@ -11,8 +11,9 @@ async function getRequisitions(): Promise<Requisition[]> {
     // Await cookies before using it
     const cookieStore = await cookies();
     
+    // Use relative API route instead of full URL
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/history/chemicals`,
+      '/api/history/chemicals',
       {
         headers: {
           cookie: cookieStore.toString(),
