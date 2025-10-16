@@ -14,7 +14,7 @@ async function getRequisitionDetails(id: number): Promise<AdminRequisitionWithIt
     const cookieStore = await cookies();
     
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/history/execories/${id}`,
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/history/execories/${id}`,
       {
         headers: {
           cookie: cookieStore.toString(),

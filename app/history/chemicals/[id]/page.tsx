@@ -14,7 +14,7 @@ async function getRequisitionDetails(id: number): Promise<RequisitionWithItems |
     const cookieStore = await cookies();
     
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/history/chemicals/${id}/history`,
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/history/chemicals/${id}`,
       {
         headers: {
           cookie: cookieStore.toString(),
